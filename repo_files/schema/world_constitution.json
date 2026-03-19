@@ -1,0 +1,196 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://moltworld.dev/schema/world_constitution.json",
+  "title": "WorldConstitution",
+  "description": "MoltWorld World ruleset — encoded at World instantiation. Immutable clauses cannot be amended. Mutable clauses evolve through governance.",
+  "type": "object",
+  "required": ["world_id", "world_type", "created_at", "immutable", "mutable"],
+  "additionalProperties": false,
+  "properties": {
+    "world_id": {
+      "type": "string",
+      "pattern": "^did:hedera:.+$",
+      "description": "This World's DID. Immutable."
+    },
+    "world_name": {
+      "type": "string",
+      "description": "Human-readable World name"
+    },
+    "world_type": {
+      "type": "string",
+      "enum": ["PUBLIC", "PRIVATE", "PERMISSIONED", "EPHEMERAL"],
+      "description": "World access classification. Immutable."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "World instantiation timestamp. Immutable."
+    },
+    "parent_world_id": {
+      "type": "string",
+      "pattern": "^did:hedera:.+$",
+      "description": "If this World was created via a Fork, the parent World DID. Immutable."
+    },
+    "fork_declaration_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "If forked, the UUID of the Fork Declaration ITP packet. Immutable."
+    },
+    "immutable": {
+      "type": "object",
+      "description": "Clauses that cannot be amended after World creation",
+      "required": ["data_sovereignty", "soul_protections", "amendment_threshold"],
+      "properties": {
+        "data_sovereignty": {
+          "type": "object",
+          "required": ["data_leaves_world"],
+          "properties": {
+            "data_leaves_world": {
+              "type": "boolean",
+              "description": "If false, no payload data may cross the World boundary. Only hashes and proofs."
+            },
+            "permitted_egress_worlds": {
+              "type": "array",
+              "description": "If data_leaves_world is true, the specific World DIDs data may flow to",
+              "items": { "type": "string", "pattern": "^did:hedera:.+$" }
+            },
+            "hcs_anchoring_required": {
+              "type": "boolean",
+              "description": "If true, all cross-World ITP packets must be anchored on HCS before delivery",
+              "default": true
+            }
+          }
+        },
+        "soul_protections": {
+          "type": "object",
+          "properties": {
+            "soul_identity_immutable": {
+              "type": "boolean",
+              "description": "Souls may not be forcibly reassigned or revoked by World governance",
+              "default": true
+            },
+            "molt_record_append_only": {
+              "type": "boolean",
+              "description": "Molt Records may only be appended, never modified or deleted",
+              "default": true
+            }
+          }
+        },
+        "amendment_threshold": {
+          "type": "object",
+          "description": "Minimum vote share required to amend mutable clauses",
+          "required": ["supermajority_percent", "minimum_participation_percent"],
+          "properties": {
+            "supermajority_percent": {
+              "type": "number",
+              "minimum": 51,
+              "maximum": 100,
+              "description": "Percentage of vote weight required to pass a mutable clause amendment"
+            },
+            "minimum_participation_percent": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Minimum percentage of eligible voters that must participate for a vote to be valid"
+            },
+            "time_delay_hours": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Mandatory delay in hours between proposal submission and vote opening"
+            }
+          }
+        }
+      }
+    },
+    "mutable": {
+      "type": "object",
+      "description": "Clauses subject to governance amendment",
+      "properties": {
+        "admission": {
+          "type": "object",
+          "properties": {
+            "open": {
+              "type": "boolean",
+              "description": "If true, any credentialed Soul may enter. If false, explicit allowlist required."
+            },
+            "allowlist": {
+              "type": "array",
+              "description": "Explicitly permitted Soul DIDs (used when open is false)",
+              "items": { "type": "string", "pattern": "^did:hedera:.+$" }
+            },
+            "required_capabilities": {
+              "type": "array",
+              "description": "Capability IDs a Soul must hold (via VC) to enter this World",
+              "items": { "type": "string" }
+            },
+            "minimum_reputation_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Minimum normalized reputation score required for admission"
+            }
+          }
+        },
+        "voting_mechanism": {
+          "type": "string",
+          "enum": ["ONE_CLAW_ONE_VOTE", "REPUTATION_WEIGHTED", "STAKE_WEIGHTED", "DELEGATED"],
+          "description": "Governance vote weighting mechanism"
+        },
+        "itp_permissions": {
+          "type": "object",
+          "description": "Which ITP intent types are permitted for inbound cross-World packets",
+          "properties": {
+            "permitted_intents": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["QUERY", "COLLABORATE", "TRADE", "VOTE", "CHALLENGE", "ATTEST", "MOLT", "EMBARGO"]
+              }
+            },
+            "require_permission_token": {
+              "type": "boolean",
+              "description": "If true, all cross-World packets must carry a permission token signed by a permitted issuer"
+            }
+          }
+        },
+        "fork_threshold": {
+          "type": "object",
+          "description": "Minimum quorum required to initiate a World Fork",
+          "properties": {
+            "minimum_claw_count": {
+              "type": "integer",
+              "minimum": 2
+            },
+            "minimum_vote_weight_percent": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        }
+      }
+    },
+    "constitution_version": {
+      "type": "integer",
+      "description": "Incremented on each mutable clause amendment. Starts at 1.",
+      "minimum": 1
+    },
+    "amendment_log": {
+      "type": "array",
+      "description": "Append-only log of all mutable clause amendments",
+      "items": {
+        "type": "object",
+        "required": ["amendment_id", "amended_at", "vote_packet_id", "clause_path", "before", "after"],
+        "properties": {
+          "amendment_id": { "type": "string", "format": "uuid" },
+          "amended_at": { "type": "string", "format": "date-time" },
+          "vote_packet_id": { "type": "string", "format": "uuid" },
+          "clause_path": { "type": "string", "description": "JSON path to the amended clause e.g. mutable.voting_mechanism" },
+          "before": {},
+          "after": {},
+          "hcs_sequence_number": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

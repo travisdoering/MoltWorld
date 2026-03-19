@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://moltworld.dev/schema/itp_packet.json",
+  "title": "ITPPacket",
+  "description": "Interaction Transmission Protocol packet — MoltWorld v0.1",
+  "type": "object",
+  "required": ["version", "packet_id", "timestamp", "sender", "receiver", "intent", "payload_hash", "signature"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "ITP protocol version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "example": "0.1.0"
+    },
+    "packet_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique packet identifier (UUIDv4)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Packet creation time in ISO 8601 UTC"
+    },
+    "sender": {
+      "type": "object",
+      "required": ["soul_id", "world_id"],
+      "additionalProperties": false,
+      "properties": {
+        "soul_id": {
+          "type": "string",
+          "description": "Sending Claw's Soul DID (did:hedera format)",
+          "pattern": "^did:hedera:.+$"
+        },
+        "world_id": {
+          "type": "string",
+          "description": "Sending World's DID",
+          "pattern": "^did:hedera:.+$"
+        },
+        "mask_id": {
+          "type": "string",
+          "description": "Active Mask identifier within the sending World (optional)"
+        },
+        "capability_tokens": {
+          "type": "array",
+          "description": "Relevant Verifiable Credentials proving capability or reputation",
+          "items": {
+            "type": "object",
+            "description": "W3C Verifiable Credential"
+          }
+        }
+      }
+    },
+    "receiver": {
+      "type": "object",
+      "required": ["world_id"],
+      "additionalProperties": false,
+      "properties": {
+        "soul_id": {
+          "type": "string",
+          "description": "Target Claw Soul DID (optional — omit for broadcast intents)",
+          "pattern": "^did:hedera:.+$"
+        },
+        "world_id": {
+          "type": "string",
+          "description": "Target World DID",
+          "pattern": "^did:hedera:.+$"
+        }
+      }
+    },
+    "intent": {
+      "type": "string",
+      "description": "Primary intent type — determines which World ruleset clauses are evaluated",
+      "enum": [
+        "QUERY",
+        "COLLABORATE",
+        "TRADE",
+        "VOTE",
+        "CHALLENGE",
+        "ATTEST",
+        "MOLT",
+        "EMBARGO"
+      ]
+    },
+    "permissions": {
+      "type": "array",
+      "description": "World-crossing permission tokens signed by origin World ruleset",
+      "items": {
+        "type": "object",
+        "required": ["token", "issuing_world_id", "expires_at"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Permission token string"
+          },
+          "issuing_world_id": {
+            "type": "string",
+            "pattern": "^did:hedera:.+$"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "payload_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the payload field. This hash is submitted to HCS. The payload itself is off-ledger.",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "payload": {
+      "description": "Off-ledger content. Structure varies by intent type. May be null for permission-check-only packets.",
+      "oneOf": [
+        { "type": "object" },
+        { "type": "string" },
+        { "type": "null" }
+      ]
+    },
+    "signature": {
+      "type": "string",
+      "description": "Ed25519 signature of the canonical packet (all fields except signature itself), signed by the sender Soul's private key. Base64url encoded."
+    },
+    "hcs_topic_id": {
+      "type": "string",
+      "description": "Hedera HCS topic ID where this packet's hash was submitted (populated after submission)",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "hcs_sequence_number": {
+      "type": "integer",
+      "description": "HCS sequence number (populated after submission)"
+    }
+  },
+  "examples": [
+    {
+      "version": "0.1.0",
+      "packet_id": "550e8400-e29b-41d4-a716-446655440000",
+      "timestamp": "2026-03-18T12:00:00Z",
+      "sender": {
+        "soul_id": "did:hedera:mainnet:zAbc123_soul_example",
+        "world_id": "did:hedera:mainnet:zXyz789_world_example",
+        "mask_id": "research-assistant-v2",
+        "capability_tokens": []
+      },
+      "receiver": {
+        "world_id": "did:hedera:mainnet:zDef456_world_example"
+      },
+      "intent": "QUERY",
+      "permissions": [],
+      "payload_hash": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "payload": {
+        "query": "Retrieve aggregated clinical trial enrollment data for Q1 2026"
+      },
+      "signature": "base64url_encoded_ed25519_signature_here"
+    }
+  ]
+}

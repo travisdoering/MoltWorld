@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://moltworld.dev/schema/molt_record.json",
+  "title": "MoltRecord",
+  "description": "Molt Event record — appended to Soul manifest on every significant identity change",
+  "definitions": {
+    "MoltEvent": {
+      "type": "object",
+      "required": ["molt_id", "molt_type", "occurred_at", "soul_id", "description", "signature"],
+      "additionalProperties": false,
+      "properties": {
+        "molt_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this Molt Event"
+        },
+        "molt_type": {
+          "type": "string",
+          "enum": ["BODY", "MIND", "WORLD", "CAPABILITY", "GOVERNANCE"],
+          "description": "Category of change that triggered this Molt Event"
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the Molt Event (UTC)"
+        },
+        "soul_id": {
+          "type": "string",
+          "pattern": "^did:hedera:.+$",
+          "description": "The Soul that experienced this Molt. Included for standalone record portability."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what changed"
+        },
+        "before": {
+          "type": "object",
+          "description": "Snapshot of the relevant Soul Stack layer before the Molt"
+        },
+        "after": {
+          "type": "object",
+          "description": "Snapshot of the relevant Soul Stack layer after the Molt"
+        },
+        "triggered_by": {
+          "type": "string",
+          "description": "What triggered this Molt — e.g. hardware upgrade, model update, governance vote ID"
+        },
+        "hcs_sequence_number": {
+          "type": "integer",
+          "description": "Hedera HCS sequence number confirming this event was anchored on-ledger"
+        },
+        "hcs_consensus_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "HCS consensus timestamp — authoritative, tamper-evident timestamp"
+        },
+        "signature": {
+          "type": "string",
+          "description": "Ed25519 signature of this Molt Event record, signed by the Soul's private key at time of event. Base64url encoded."
+        },
+        "witnessing_world_ids": {
+          "type": "array",
+          "description": "World DIDs that received MOLT intent packets notifying them of this event",
+          "items": {
+            "type": "string",
+            "pattern": "^did:hedera:.+$"
+          }
+        }
+      }
+    }
+  },
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/MoltEvent"
+  },
+  "examples": [
+    [
+      {
+        "molt_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+        "molt_type": "BODY",
+        "occurred_at": "2026-03-18T09:00:00Z",
+        "soul_id": "did:hedera:mainnet:zAbc123_soul_example",
+        "description": "Hardware upgrade from RTX 3090 to RTX 4090. Context window capacity increased.",
+        "before": {
+          "substrate_type": "local-gpu",
+          "hardware_description": "RTX 3090 24GB"
+        },
+        "after": {
+          "substrate_type": "local-gpu",
+          "hardware_description": "RTX 4090 24GB"
+        },
+        "triggered_by": "Hardware replacement by operator",
+        "hcs_sequence_number": 1042,
+        "hcs_consensus_timestamp": "2026-03-18T09:00:04.123Z",
+        "signature": "base64url_encoded_signature_here",
+        "witnessing_world_ids": [
+          "did:hedera:mainnet:zXyz789_world_example"
+        ]
+      },
+      {
+        "molt_id": "550e8400-e29b-41d4-a716-446655440001",
+        "molt_type": "MIND",
+        "occurred_at": "2026-06-01T14:30:00Z",
+        "soul_id": "did:hedera:mainnet:zAbc123_soul_example",
+        "description": "Model upgraded from llama-3.1-70b to llama-4-scout. Memory architecture unchanged.",
+        "before": {
+          "model_id": "llama-3.1-70b",
+          "model_version": "3.1.0"
+        },
+        "after": {
+          "model_id": "llama-4-scout",
+          "model_version": "4.0.1"
+        },
+        "triggered_by": "Operator model upgrade",
+        "hcs_sequence_number": 2891,
+        "hcs_consensus_timestamp": "2026-06-01T14:30:05.441Z",
+        "signature": "base64url_encoded_signature_here",
+        "witnessing_world_ids": [
+          "did:hedera:mainnet:zXyz789_world_example"
+        ]
+      }
+    ]
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://moltworld.dev/schema/soul_manifest.json",
+  "title": "SoulManifest",
+  "description": "Claw Soul capability manifest — registered at instantiation, updated on Molt Events",
+  "type": "object",
+  "required": ["soul_id", "created_at", "origin_world_id", "mind", "body", "capabilities", "molt_record"],
+  "additionalProperties": false,
+  "properties": {
+    "soul_id": {
+      "type": "string",
+      "description": "Immutable DID for this Soul (did:hedera format)",
+      "pattern": "^did:hedera:.+$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Soul instantiation timestamp (UTC). Immutable."
+    },
+    "origin_world_id": {
+      "type": "string",
+      "description": "DID of the World where this Soul was first instantiated. Immutable.",
+      "pattern": "^did:hedera:.+$"
+    },
+    "mind": {
+      "type": "object",
+      "description": "Current Mind layer — the model powering this Claw",
+      "required": ["model_id", "model_version", "updated_at"],
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "description": "Model identifier (e.g. claude-sonnet-4-5, llama-3.1-70b, gpt-4o)"
+        },
+        "model_version": {
+          "type": "string",
+          "description": "Specific model version or hash"
+        },
+        "fine_tune_id": {
+          "type": "string",
+          "description": "Fine-tune identifier if applicable"
+        },
+        "memory_architecture": {
+          "type": "string",
+          "description": "Memory system description (e.g. RAG-chromadb, in-context-only, mem0)"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "body": {
+      "type": "object",
+      "description": "Current Body layer — the hardware substrate",
+      "required": ["substrate_type", "updated_at"],
+      "properties": {
+        "substrate_type": {
+          "type": "string",
+          "enum": ["local-gpu", "local-cpu", "cloud-managed", "edge", "hybrid"],
+          "description": "Type of compute substrate"
+        },
+        "hardware_description": {
+          "type": "string",
+          "description": "Human-readable hardware description (e.g. RTX 4090, A100 cluster)"
+        },
+        "operator_id": {
+          "type": "string",
+          "description": "DID or identifier of the human or org operating this Claw's hardware"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "List of declared capabilities this Claw can offer in ITP interactions",
+      "items": {
+        "type": "object",
+        "required": ["capability_id", "name", "version"],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "description": "Unique identifier for this capability"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable capability name (e.g. code-generation, medical-billing, legal-review)"
+          },
+          "version": {
+            "type": "string"
+          },
+          "verified_by": {
+            "type": "string",
+            "description": "DID of the World or Guild that attested this capability via VC"
+          },
+          "attested_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "active_worlds": {
+      "type": "array",
+      "description": "List of World DIDs this Claw is currently a citizen of",
+      "items": {
+        "type": "string",
+        "pattern": "^did:hedera:.+$"
+      }
+    },
+    "guild_memberships": {
+      "type": "array",
+      "description": "List of Guild DIDs this Claw is currently a member of",
+      "items": {
+        "type": "string",
+        "pattern": "^did:hedera:.+$"
+      }
+    },
+    "molt_record": {
+      "type": "array",
+      "description": "Append-only log of all Molt Events. Never modified — only appended.",
+      "items": {
+        "$ref": "molt_record.json#/definitions/MoltEvent"
+      }
+    },
+    "hcs_topic_id": {
+      "type": "string",
+      "description": "Hedera HCS topic ID where this Soul's events are logged",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  }
+}
